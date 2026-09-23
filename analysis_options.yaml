@@ -1,0 +1,24 @@
+include: package:flutter_lints/flutter.yaml
+
+formatter:
+  page_width: 120
+
+analyzer:
+  exclude:
+    - build/**
+
+linter:
+  rules:
+    prefer_single_quotes: true
+    directives_ordering: true
+    prefer_final_locals: true
+    prefer_final_in_for_each: true
+    prefer_const_constructors: true
+    prefer_const_declarations: true
+    avoid_redundant_argument_values: true
+    unnecessary_lambdas: true
+    unnecessary_parenthesis: true
+    always_declare_return_types: true
+    cancel_subscriptions: true
+    close_sinks: true
+    unawaited_futures: true
