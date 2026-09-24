@@ -45,7 +45,7 @@ Future<void> main() async {
       name: OdooSeed.demoUserName,
       login: OdooSeed.demoUserLogin,
       password: requireEnv(env, 'SEED_DEMO_PASSWORD'),
-      groupXmlIds: ['base.group_user', 'sales_team.group_sale_salesman_all_leads'],
+      groupXmlIds: ['base.group_user', 'sales_team.group_sale_salesman_all_leads', 'base.group_partner_manager'],
       expectInternal: true,
     );
 
@@ -243,35 +243,35 @@ Future<({int uid, int partnerId})> _ensureUser(
               as List)
           .cast<Map>();
 
-  if (found.isEmpty) {
-    final groupIds = <int>[];
-    for (final xmlId in groupXmlIds) {
-      final parts = xmlId.split('.');
-      final rows = await client.searchRead(
-        'ir.model.data',
-        domain: [
-          ['module', '=', parts[0]],
-          ['name', '=', parts[1]],
-          ['model', '=', 'res.groups'],
-        ],
-        fields: ['res_id'],
-        limit: 1,
-      );
-      if (rows.isEmpty) throw OdooServerException('Group $xmlId not found');
-      groupIds.add(rows.first['res_id'] as int);
-    }
-    final fields =
-        await client.callKw(
-              'res.users',
-              'fields_get',
-              kwargs: {
-                'allfields': ['group_ids', 'groups_id'],
-                'attributes': ['type'],
-              },
-            )
-            as Map;
-    final groupField = fields.containsKey('group_ids') ? 'group_ids' : 'groups_id';
+  final groupIds = <int>[];
+  for (final xmlId in groupXmlIds) {
+    final parts = xmlId.split('.');
+    final rows = await client.searchRead(
+      'ir.model.data',
+      domain: [
+        ['module', '=', parts[0]],
+        ['name', '=', parts[1]],
+        ['model', '=', 'res.groups'],
+      ],
+      fields: ['res_id'],
+      limit: 1,
+    );
+    if (rows.isEmpty) throw OdooServerException('Group $xmlId not found');
+    groupIds.add(rows.first['res_id'] as int);
+  }
+  final fields =
+      await client.callKw(
+            'res.users',
+            'fields_get',
+            kwargs: {
+              'allfields': ['group_ids', 'groups_id'],
+              'attributes': ['type'],
+            },
+          )
+          as Map;
+  final groupField = fields.containsKey('group_ids') ? 'group_ids' : 'groups_id';
 
+  if (found.isEmpty) {
     await client.callKw(
       'res.users',
       'create',
@@ -295,7 +295,14 @@ Future<({int uid, int partnerId})> _ensureUser(
       'write',
       args: [
         [id],
-        {'login': login, 'password': password, 'active': true},
+        {
+          'login': login,
+          'password': password,
+          'active': true,
+          groupField: [
+            for (final groupId in groupIds) [4, groupId],
+          ],
+        },
       ],
       kwargs: {'context': context},
     );
